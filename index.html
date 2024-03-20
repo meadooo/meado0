@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mead0o's sb !!</title>
+    <script type="text/javascript">
+      window.errors = []
+      if (window.addEventListener) {
+        window.addEventListener(
+          'error',
+          function (e) {
+            if (e.message) {
+              if (e.error && e.error.stack) {
+                if (e.message.indexOf('Uncaught SyntaxError') === 0) {
+                  window.errors.push(
+                    e.message +
+                      ' at ' +
+                      e.filename +
+                      ':' +
+                      e.lineno +
+                      ':' +
+                      e.colno
+                  )
+                } else {
+                  window.errors.push(e.error.stack)
+                }
+                if (window.onNewError) window.onNewError()
+              }
+            } else {
+              window.errors.push(
+                'Problem loading ' + (e.target.src || e.target.href)
+              )
+              if (window.onNewError) window.onNewError()
+            }
+            window.onerror = null
+          },
+          true
+        ) // true so that errors bubble up to window
+        window.addEventListener(
+          'unhandledrejection',
+          function (e) {
+            window.errors.push(
+              e.reason && (e.reason.stack || e.reason.message || e.reason)
+            )
+            if (window.onNewError) window.onNewError()
+          },
+          false
+        )
+      }
+      window.onerror = function (message, source, lineno, colno, error) {
+        if (colno) {
+          lineno += ':' + colno
+        }
+        if (error && error.stack) {
+          window.errors.push(error.stack)
+        } else {
+          window.errors.push(message + ' at ' + source + ':' + lineno)
+        }
+        if (window.onNewError) window.onNewError()
+      }
+    </script>
+     <style>
+html,
+body {
+  height: 100%;
+}
+body,
+::backdrop {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+  font-size: 0;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  overflow: hidden;
+  background-position: center;
+  background-size: cover;
+}
+#wrapper {
+  display: block;
+  position: relative;
+}
+.no-cursor #wrapper {
+  cursor: none;
+}
+.loading #wrapper {
+  visibility: hidden;
+}
+.stretch-stage #wrapper {
+  width: 100vw;
+  height: 100vh;
+}
+/* CSS for proportional wrapper scaling is added dynamically by htmlifier.ts */
+#monitors {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+#stage {
+  width: 100%;
+  height: 100%;
+}
+#loading-progress {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  border-radius: 20px;
+  --progress: 0%;
+  z-index: 100;
+}
+.show-loading-progress #loading-progress {
+  display: block;
+}
+#loading-progress::before {
+  content: attr(data-progress);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+}
+#loading-progress::after {
+  content: '';
+  display: block;
+  height: 16px;
+  border-radius: 20px;
+  width: var(--progress);
+}
+#loading-image {
+  position: fixed;
+  max-width: 100%;
+  max-height: 100%;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+}
+.stretch-loading-image #loading-image {
+  width: 100%;
+  height: 100%;
+}
+.buttons {
+  position: fixed;
+  top: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-bottom-left-radius: 12px;
+}
+.buttons .button,
+.buttons button {
+  display: none;
+  -webkit-appearance: none;
+  border: none;
+  background: none;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 24px;
+}
+.buttons button:disabled,
+#add-sprite-file:disabled + #add-sprite-btn {
+  cursor: auto;
+  opacity: 0.5;
+}
+#start-btn {
+  background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"%3E%3Cpath d="M8 5v14l11-7z" fill="%23fff"/%3E%3C/svg%3E%0A');
+}
+.running #start-btn {
+  background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"%3E%3Cpath d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" fill="%23fff"/%3E%3C/svg%3E');
+}
+#stop-btn {
+  background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"%3E%3Cpath d="M6 6h12v12H6z" fill="%23fff"/%3E%3C/svg%3E%0A');
+}
+#fullscreen-btn {
+  background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Cpath d="M14 28h-4v10h10v-4h-6v-6zm-4-8h4v-6h6v-4H10v10zm24 14h-6v4h10V28h-4v6zm-6-24v4h6v6h4V10H28z" fill="%23fff"/%3E%3C/svg%3E');
+}
+.fullscreen #fullscreen-btn {
+  background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Cpath d="M10 32h6v6h4V28H10v4zm6-16h-6v4h10V10h-4v6zm12 22h4v-6h6v-4H28v10zm4-22v-6h-4v10h10v-4h-6z" fill="%23fff"/%3E%3C/svg%3E');
+}
+#download-btn {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M5,20h14v-2H5V20z M19,9h-4V3H9v6H5l7,7L19,9z'/%3E%3C/svg%3E");
+}
+#add-sprite-btn {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z'/%3E%3C/svg%3E");
+}
+#add-sprite-file {
+  display: none;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+.show-start-stop-btns #start-btn,
+.show-start-stop-btns #stop-btn,
+.show-fullscreen-btn #fullscreen-btn,
+.show-download-btn #download-btn,
+.show-add-sprite-btn #add-sprite-btn,
+.show-add-sprite-btn #add-sprite-file {
+  display: inline-block;
+}
+.monitor {
+  position: absolute;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  overflow: hidden;
+  padding: 3px;
+  white-space: pre;
+}
+.show-monitor-box .monitor {
+  border-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.3);
+}
+.monitor-label {
+  margin: 0 5px;
+  font-weight: bold;
+}
+.monitor-value {
+  display: inline-block;
+  vertical-align: top;
+  min-width: 34px;
+  text-align: center;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: text;
+  transform: translateZ(0);
+}
+.default .monitor-value,
+.slider .monitor-value {
+  margin: 0 5px;
+  padding: 1px 3px;
+}
+.show-monitor-box .default .monitor-value,
+.show-monitor-box .slider .monitor-value {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.large {
+  padding: 0.1rem 0.25rem;
+  min-width: 3rem;
+}
+.show-monitor-box .large {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+.large .monitor-label {
+  display: none;
+}
+.large .monitor-value {
+  font-size: 1rem;
+  width: 100%;
+}
+.list {
+  padding: 0;
+  overflow: auto;
+  overflow-x: hidden;
+}
+.list .monitor-label {
+  text-align: center;
+  padding: 3px;
+  width: 100%;
+  display: block;
+  margin: 0;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+}
+.list .monitor-value {
+  display: block;
+}
+.row {
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  height: 24px;
+  box-sizing: border-box;
+  transform: translateZ(0);
+}
+.index {
+  font-weight: bold;
+  margin: 0 3px;
+  flex: none;
+}
+.row-value {
+  flex: auto;
+  margin: 0 3px;
+  text-align: left;
+  border-radius: 0.25rem;
+  border: 1px solid transparent;
+  height: 22px;
+  padding: 3px 5px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.show-monitor-box .row-value {
+  border-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.slider input {
+  display: block;
+  width: 100%;
+  transform: translateZ(0);
+}
+#asking-box {
+  display: none;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background-color: rgba(33, 33, 33, 0.7);
+}
+.asking #asking-box {
+  display: block;
+}
+#question {
+  display: block;
+  margin: 0 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: white;
+}
+#answer {
+  border: none;
+  background: none;
+  width: 100%;
+  font: inherit;
+  font-size: 16px;
+  color: white;
+  padding: 10px;
+  box-sizing: border-box;
+}
+#answer:focus {
+  outline: none;
+}
+#errors {
+  -webkit-appearance: none;
+  border: none;
+  background: rgba(255, 0, 0, 0.7);
+  color: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: none;
+}
+
+</style> <style>
+#wrapper { width: 100vw; height: 75vw; }
+@media (min-aspect-ratio: 480/360) {
+#wrapper { height: 100vh; width: 133.33333333333331vh; }
+}
+#loading-progress {
+border: 1px solid #00ffff;
+}
+#loading-progress::before {
+color: #00ffff;
+}
+#loading-progress::after {
+background-color: #00ffff;
+}
+.monitor {
+color: #ffffff;
+}
+</style>
+  </head>
+  <body class="loading show-loading-progress show-fullscreen-btn show-monitor-box">
+    <div id="wrapper">
+      <canvas id="stage"></canvas>
+      <div id="monitors"></div>
+      <div id="asking-box">
+        <label id="question" for="answer">Question</label>
+        <input type="text" id="answer" />
+      </div>
+    </div>
+    <div id="loading-progress" data-progress="0%"></div>
+     
+    <div class="buttons">
+      <!--
+        Only support sprite files (no images) for now. See
+        https://github.com/SheepTester/htmlifier/issues/67#issuecomment-894746718
+      -->
+      <input
+        type="file"
+        id="add-sprite-file"
+        accept=".sprite2, .sprite3"
+        aria-label="Select a Scratch sprite to add"
+        multiple
+      />
+      <label
+        class="button"
+        id="add-sprite-btn"
+        for="add-sprite-file"
+        title="Add Scratch sprite to project"
+      ></label>
+      <button id="download-btn" aria-label="Download Scratch project"></button>
+      <button id="start-btn" aria-label="Start"></button>
+      <button id="stop-btn" aria-label="Stop" disabled></button>
+      <button id="fullscreen-btn" aria-label="Enter/exit fullscreen"></button>
+    </div>
+    <textarea id="errors" readonly></textarea>
+    <script src="./vm.js"></script> <script>
+const noop = () => null
+
+window.Scratch = {
+  get vm () {
+    return window.vm
+  },
+  get renderer () {
+    return window.vm.runtime.renderer
+  },
+  get audioEngine () {
+    return window.vm.runtime.audioEngine
+  },
+  get bitmapAdapter () {
+    return window.vm.runtime.v2BitmapAdapter
+  },
+  get videoProvider () {
+    return window.vm.runtime.ioDevices.video.provider
+  }
+}
+
+const CLOUD_PREFIX = '\u2601 '
+window.setCloud = (name, value) => {
+  vm.postIOData('cloud', {
+    varUpdate: {
+      name: CLOUD_PREFIX + name,
+      value
+    }
+  })
+}
+function postError (err) {
+  setCloud('eval error', err.toString())
+}
+
+class CloudProvider {
+  constructor (options) {
+    this._serverUrl = options.cloud.serverUrl
+    this._specialBehaviours = options.cloud.specialBehaviours
+    this._options = options
+
+    this._ws = null
+
+    this.createVariable = noop
+    this.renameVariable = noop
+    this.deleteVariable = noop
+
+    this._handleMessage = event => {
+      event.data.split('\n').forEach(message => {
+        if (message) {
+          const { name, value } = JSON.parse(message)
+          vm.postIOData('cloud', {
+            varUpdate: { name, value }
+          })
+        }
+      })
+    }
+    this._handleOpen = () => {
+      this._sendData({ method: 'handshake' })
+    }
+    this._handleClose = () => {
+      setTimeout(() => this._openConnection(), 500)
+    }
+
+    this.handleUrlChange = () => {
+      setCloud('url', window.location.href)
+    }
+    if (this._specialBehaviours) {
+      window.addEventListener('hashchange', this.handleUrlChange)
+      window.addEventListener('popstate', this.handleUrlChange)
+      // Paste output
+      window.addEventListener('paste', event => {
+        setCloud(
+          'pasted',
+          (event.clipboardData || window.clipboardData).getData('text')
+        )
+      })
+    }
+
+    if (this._serverUrl) {
+      this._openConnection()
+    }
+  }
+
+  _openConnection () {
+    try {
+      this._ws = new WebSocket(this._serverUrl)
+    } catch (error) {
+      console.warn(error)
+      return
+    }
+    this._ws.onmessage = this._handleMessage
+    this._ws.onopen = this._handleOpen
+    this._ws.onclose = this._handleClose
+  }
+
+  _sendData (data) {
+    data.user = this._options.username
+    data.project_id = this._options.cloud.projectId
+    this._ws.send(JSON.stringify(data) + '\n')
+  }
+
+  updateVariable (name, value) {
+    if (this._specialBehaviours) {
+      let matched = true
+      if (name === CLOUD_PREFIX + 'eval') {
+        try {
+          Promise.resolve(eval(value))
+            .then(output => {
+              setCloud('eval output', output)
+            })
+            .catch(postError)
+        } catch (error) {
+          postError(error)
+        }
+      } else if (name === CLOUD_PREFIX + 'open link') {
+        try {
+          window.open(value, '_blank')
+        } catch (error) {
+          postError(error)
+        }
+      } else if (name === CLOUD_PREFIX + 'redirect') {
+        window.location = value
+      } else if (name === CLOUD_PREFIX + 'set clipboard') {
+        try {
+          navigator.clipboard.writeText(value).catch(postError)
+        } catch (error) {
+          postError(error)
+        }
+      } else if (name === CLOUD_PREFIX + 'set server ip') {
+        this._cloudHost = value
+        if (this._ws) {
+          this._ws.onclose = noop
+          this._ws.close()
+        }
+        this._openConnection()
+      } else if (name === CLOUD_PREFIX + 'username') {
+        this._options.username = value
+        vm.postIOData('userData', { username: value })
+      } else {
+        matched = false
+      }
+      if (matched) {
+        return
+      }
+    }
+    if (
+      !this._serverUrl ||
+      (this._specialBehaviours &&
+        name.startsWith(CLOUD_PREFIX + 'local storage'))
+    ) {
+      try {
+        localStorage.setItem('[s3] ' + name, value)
+      } catch (error) {
+        postError(error)
+      }
+    } else {
+      this._sendData({ method: 'set', name, value })
+    }
+  }
+
+  requestCloseConnection () {
+    if (
+      this._ws &&
+      this._ws.readyState !== WebSocket.CLOSING &&
+      this._ws.readyState !== WebSocket.CLOSED
+    ) {
+      this._ws.onclose = noop
+      this._ws.close()
+    }
+  }
+}
+
+// Based on
+// https://github.com/LLK/scratch-gui/blob/7b658c60c7c04055e575601a861195fe6c9933f3/src/lib/video/camera.js
+// https://github.com/LLK/scratch-gui/blob/7b658c60c7c04055e575601a861195fe6c9933f3/src/lib/video/video-provider.js
+class VideoProvider {
+  constructor (width, height) {
+    this._dimensions = [width, height]
+    this.mirror = true
+    this._frameCacheTimeout = 16
+    this._video = null
+    this._track = null
+    this._workspace = []
+  }
+
+  get video () {
+    return this._video
+  }
+
+  enableVideo () {
+    this.enabled = true
+    return this._setupVideo()
+  }
+
+  disableVideo () {
+    this.enabled = false
+    if (this._singleSetup) {
+      this._singleSetup
+        .then(this._teardown.bind(this))
+        .catch(err => this.onError(err))
+    }
+  }
+
+  _teardown () {
+    if (this.enabled === false) {
+      requestStack.pop()
+      const disableTrack = requestStack.length === 0
+      this._singleSetup = null
+      this._video = null
+      if (this._track && disableTrack) {
+        this._track.stop()
+      }
+      this._track = null
+    }
+  }
+
+  getFrame ({
+    dimensions = this._dimensions,
+    mirror = this.mirror,
+    format = 'image-data',
+    cacheTimeout = this._frameCacheTimeout
+  }) {
+    if (!this.videoReady) {
+      return null
+    }
+    const [width, height] = dimensions
+    const workspace = this._getWorkspace({
+      dimensions,
+      mirror: Boolean(mirror)
+    })
+    const { videoWidth, videoHeight } = this._video
+    const { canvas, context, lastUpdate, cacheData } = workspace
+    const now = Date.now()
+
+    if (lastUpdate + cacheTimeout < now) {
+      if (mirror) {
+        context.scale(-1, 1)
+        context.translate(width * -1, 0)
+      }
+
+      context.drawImage(
+        this._video,
+        0,
+        0,
+        videoWidth,
+        videoHeight,
+        0,
+        0,
+        width,
+        height
+      )
+
+      context.setTransform(1, 0, 0, 1, 0, 0)
+      workspace.lastUpdate = now
+    }
+
+    if (!cacheData[format]) {
+      cacheData[format] = { lastUpdate: 0 }
+    }
+    const formatCache = cacheData[format]
+
+    if (formatCache.lastUpdate + cacheTimeout < now) {
+      if (format === 'image-data') {
+        formatCache.lastData = context.getImageData(0, 0, width, height)
+      } else if (format === 'canvas') {
+        formatCache.lastUpdate = Infinity
+        formatCache.lastData = canvas
+      } else {
+        console.error(`video io error - unimplemented format ${format}`)
+        formatCache.lastUpdate = Infinity
+        formatCache.lastData = null
+      }
+
+      formatCache.lastUpdate = Math.max(
+        workspace.lastUpdate,
+        formatCache.lastUpdate
+      )
+    }
+
+    return formatCache.lastData
+  }
+
+  onError (error) {
+    console.error('Unhandled video io device error', error)
+  }
+
+  _setupVideo () {
+    if (this._singleSetup) {
+      return this._singleSetup
+    }
+
+    if (requestStack.length === 0) {
+      this._singleSetup = navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          width: { min: width, ideal: (480 * width) / height },
+          height: { min: height, ideal: 480 }
+        }
+      })
+      requestStack.push(streamPromise)
+    } else if (requestStack.length > 0) {
+      this._singleSetup = requestStack[0]
+      requestStack.push(true)
+    }
+    this._singleSetup
+      .then(stream => {
+        this._video = document.createElement('video')
+
+        try {
+          this._video.srcObject = stream
+        } catch (_error) {
+          this._video.src = window.URL.createObjectURL(stream)
+        }
+        this._video.play()
+        this._track = stream.getTracks()[0]
+        return this
+      })
+      .catch(error => {
+        this._singleSetup = null
+        this.onError(error)
+      })
+
+    return this._singleSetup
+  }
+
+  get videoReady () {
+    if (!this.enabled || !this._video || !this._track) {
+      return false
+    }
+    const { videoWidth, videoHeight } = this._video
+    return (
+      typeof videoWidth === 'number' &&
+      typeof videoHeight === 'number' &&
+      videoWidth > 0 &&
+      videoHeight > 0
+    )
+  }
+
+  _getWorkspace ({ dimensions, mirror }) {
+    let workspace = this._workspace.find(
+      space =>
+        space.dimensions.join('-') === dimensions.join('-') &&
+        space.mirror === mirror
+    )
+    if (!workspace) {
+      workspace = {
+        dimensions,
+        mirror,
+        canvas: document.createElement('canvas'),
+        lastUpdate: 0,
+        cacheData: {}
+      }
+      workspace.canvas.width = dimensions[0]
+      workspace.canvas.height = dimensions[1]
+      workspace.context = workspace.canvas.getContext('2d')
+      this._workspace.push(workspace)
+    }
+    return workspace
+  }
+}
+
+const fullscreenBtn = document.getElementById('fullscreen-btn')
+const exitFullscreen =
+  document.exitFullscreen ||
+  document.msExitFullscreen ||
+  document.mozCancelFullScreen ||
+  document.webkitExitFullscreen
+const requestFullscreen =
+  document.body.requestFullscreen ||
+  document.body.msRequestFullscreen ||
+  document.body.mozRequestFullScreen ||
+  document.body.webkitRequestFullscreen
+function isFullscreen () {
+  return (
+    document.fullscreenElement ||
+    document.mozFullScreenElement ||
+    document.webkitFullscreenElement ||
+    document.msFullscreenElement
+  )
+}
+function toggleFullscreen () {
+  if (isFullscreen()) {
+    exitFullscreen.call(document)
+  } else {
+    requestFullscreen.call(document.body)
+  }
+}
+fullscreenBtn.addEventListener('click', () => {
+  fullscreenBtn.blur()
+  toggleFullscreen()
+})
+function handleFullscreenChange () {
+  if (isFullscreen()) {
+    document.body.classList.add('fullscreen')
+  } else {
+    document.body.classList.remove('fullscreen')
+  }
+}
+document.addEventListener('fullscreenchange', handleFullscreenChange)
+document.addEventListener('mozfullscreenchange', handleFullscreenChange)
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+document.addEventListener('msfullscreenchange', handleFullscreenChange)
+
+window.init = async ({ width, height, ...options }) => {
+  window.vm = new window.NotVirtualMachine(width, height)
+  vm.setCompatibilityMode(options.fps)
+  vm.setTurboMode(options.turbo)
+  vm.requireLimits(options.limits, { fencing: options.fencing })
+
+  const storage = new ScratchStorage()
+  const AssetType = storage.AssetType
+  if (options.assets.project) {
+    storage.addWebStore([AssetType.Project], () => options.assets.project)
+    storage.addWebStore(
+      [AssetType.ImageVector, AssetType.ImageBitmap, AssetType.Sound],
+      ({ assetId, dataFormat }) => options.assets[`${assetId}.${dataFormat}`]
+    )
+  }
+  const progress = document.getElementById('loading-progress')
+  if (options.loadingProgress) {
+    const _load = storage.webHelper.load
+    let total = 0,
+      complete = 0
+    storage.webHelper.load = function (...args) {
+      const result = _load.call(this, ...args)
+      total += 1
+      const percentage = (complete / total) * 100
+      progress.dataset.progress = percentage.toFixed(2) + '%'
+      progress.style.setProperty('--progress', percentage + '%')
+      result.then(() => {
+        complete += 1
+        const percentage = (complete / total) * 100
+        progress.dataset.progress = percentage.toFixed(2) + '%'
+        progress.style.setProperty('--progress', percentage + '%')
+      })
+      return result
+    }
+  }
+  vm.attachStorage(storage)
+
+  function resize () {
+    const rect = canvas.getBoundingClientRect()
+    renderer.resize(rect.width, rect.height)
+    if (options.stretchStage) {
+      monitorWrapper.style.transform = `scaleX(${rect.width /
+        width}) scaleY(${rect.height / height})`
+    } else {
+      monitorWrapper.style.transform = `scale(${rect.height / height})`
+    }
+  }
+  const monitorWrapper = document.getElementById('monitors')
+  const canvas = document.getElementById('stage')
+  const renderer = new window.ScratchRender(
+    canvas,
+    -width / 2,
+    width / 2,
+    -height / 2,
+    height / 2
+  )
+  resize()
+  vm.attachRenderer(renderer)
+
+  vm.attachAudioEngine(new window.AudioEngine())
+  vm.attachV2BitmapAdapter(
+    new ScratchSVGRenderer.BitmapAdapter(null, null, width, height)
+  )
+  vm.setVideoProvider(new VideoProvider(width, height))
+  vm.start()
+
+  if (options.extensionCount > 0) {
+    const OldWorker = window.Worker
+    window.Worker = class extends OldWorker {
+      // deno-lint-ignore constructor-super
+      constructor (...args) {
+        if (args[0].endsWith('extension-worker.js')) {
+          if (options.extensionWorker.url) {
+            super(options.extensionWorker.url, ...args.slice(1))
+          } else {
+            super(
+              URL.createObjectURL(
+                new Blob([options.extensionWorker.script], {
+                  type: 'text/javascript'
+                })
+              ),
+              ...args.slice(1)
+            )
+          }
+        } else {
+          super(...args)
+        }
+      }
+    }
+  }
+
+  /* https://github.com/LLK/scratch-gui/blob/develop/src/containers/stage.jsx#L176-L300 */
+  const getEventXY = e => {
+    if (e.touches && e.touches[0]) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    } else if (e.changedTouches && e.changedTouches[0]) {
+      return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }
+    }
+    return { x: e.clientX, y: e.clientY }
+  }
+  let mouseDown = false
+  let mouseDownPosition = null
+  let mouseDownTimeoutId = null
+  let isDragging = false
+  let dragId = null
+  let dragOffset = null
+  function cancelMouseDownTimeout () {
+    if (mouseDownTimeoutId !== null) {
+      clearTimeout(mouseDownTimeoutId)
+    }
+    mouseDownTimeoutId = null
+  }
+  // https://github.com/LLK/scratch-gui/blob/develop/src/containers/stage.jsx#L337-L366
+  function handleStartDrag () {
+    if (dragId || !mouseDownPosition) return
+    const drawableId = renderer.pick(mouseDownPosition.x, mouseDownPosition.y)
+    if (drawableId === null) return
+    const targetId = vm.getTargetIdForDrawableId(drawableId)
+    if (targetId === null) return
+    const target = vm.runtime.getTargetById(targetId)
+    if (!target || !target.draggable) return
+    target.goToFront()
+    const drawableData = renderer.extractDrawable(
+      drawableId,
+      mouseDownPosition.x,
+      mouseDownPosition.y
+    )
+    vm.startDrag(targetId)
+    isDragging = true
+    dragId = targetId
+    dragOffset = drawableData.scratchOffset
+  }
+  const accumulative = { x: 0, y: 0 }
+  function postIfPointerLocked (e, isDown) {
+    if (
+      document.pointerLockElement === canvas ||
+      document.mozPointerLockElement === canvas
+    ) {
+      accumulative.x += e.movementX
+      accumulative.y += e.movementY
+      vm.postIOData('mouse', {
+        isDown,
+        x: accumulative.x + width / 2,
+        y: accumulative.y + height / 2,
+        canvasWidth: width,
+        canvasHeight: height
+      })
+      return true
+    } else {
+      return false
+    }
+  }
+  function postMouse (event, isDown) {
+    const { x, y } = getEventXY(event)
+    const rect = canvas.getBoundingClientRect()
+    const mousePosition = { x: x - rect.left, y: y - rect.top }
+    vm.postIOData('mouse', {
+      isDown,
+      ...mousePosition,
+      canvasWidth: rect.width,
+      canvasHeight: rect.height
+    })
+    return { mousePosition, rect }
+  }
+  function handleMouseMove (event) {
+    if (postIfPointerLocked(event)) return
+    const { mousePosition, rect } = postMouse(event)
+    if (mouseDown && !isDragging) {
+      const distanceFromMouseDown = Math.hypot(
+        mousePosition.x - mouseDownPosition.x,
+        mousePosition.y - mouseDownPosition.y
+      )
+      if (distanceFromMouseDown > 3) {
+        cancelMouseDownTimeout()
+        handleStartDrag()
+      }
+    }
+    if (mouseDown && isDragging) {
+      const nativeSize = renderer.getNativeSize()
+      vm.postSpriteInfo({
+        x:
+          (nativeSize[0] / rect.width) * (mousePosition.x - rect.width / 2) +
+          dragOffset[0],
+        y: -(
+          (nativeSize[1] / rect.height) * (mousePosition.y - rect.height / 2) +
+          dragOffset[1]
+        ),
+        force: true
+      })
+    }
+  }
+  function handleMouseDown (event) {
+    mouseDown = true
+    vm.postIOData('keyboard', {
+      key: 'Mouse' + event.which,
+      isDown: true
+    })
+    if (postIfPointerLocked(event, true)) return
+    mouseDownPosition = postMouse(event, true).mousePosition
+    mouseDownTimeoutId = setTimeout(handleStartDrag, 400)
+    event.preventDefault()
+    if (!document.body.classList.contains('asking')) {
+      window.focus()
+    }
+  }
+  function handleMouseUp (event) {
+    cancelMouseDownTimeout()
+    mouseDown = false
+    mouseDownPosition = null
+    if (isDragging) {
+      vm.stopDrag(dragId)
+      isDragging = false
+      dragOffset = null
+      dragId = null
+    }
+    vm.postIOData('keyboard', {
+      key: 'Mouse' + event.which,
+      isDown: false
+    })
+    if (postIfPointerLocked(event, false)) return
+    postMouse(event, false)
+  }
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
+  document.addEventListener('touchmove', handleMouseMove)
+  document.addEventListener('touchend', handleMouseUp, { passive: false })
+  canvas.addEventListener('wheel', event => {
+    vm.postIOData('mouseWheel', event)
+    event.preventDefault()
+  })
+  window.addEventListener('resize', resize)
+  canvas.addEventListener('contextmenu', event => {
+    event.preventDefault()
+  })
+  if (options.pointerLock) {
+    canvas.requestPointerLock =
+      canvas.requestPointerLock || canvas.mozRequestPointerLock
+    canvas.addEventListener('click', () => {
+      canvas.requestPointerLock()
+    })
+  }
+
+  /**
+   * Maps e.key to e.code. For example, Shift -> ShiftRight. This is because the
+   * keyup event doesn't fire when you let go of one shift if the other shift
+   * key is still held down.
+   */
+  const keyToCode = new Map()
+  function postKey (event, isDown) {
+    const key = !event.key || event.key === 'Dead' ? event.keyCode : event.key
+    vm.postIOData('keyboard', {
+      key: key,
+      isDown
+    })
+    vm.postIOData('keyboard', {
+      key: 'code_' + event.code,
+      isDown
+    })
+  }
+  document.addEventListener('keydown', event => {
+    if (event.target !== document && event.target !== document.body) return
+    const prevCode = keyToCode.get(event.key)
+    if (prevCode) {
+      if (prevCode !== event.code) {
+        vm.postIOData('keyboard', {
+          key: 'code_' + prevCode,
+          isDown: false
+        })
+      }
+    }
+    postKey(event, true)
+    keyToCode.set(event.key, event.code)
+    if (event.keyCode === 32 || (event.keyCode >= 37 && event.keyCode <= 40)) {
+      event.preventDefault()
+    }
+    if (
+      event.key === 'f' &&
+      (event.ctrlKey || event.metaKey) &&
+      !event.shiftKey &&
+      !event.altKey
+    ) {
+      toggleFullscreen()
+      event.preventDefault()
+    }
+  })
+  document.addEventListener('keyup', e => {
+    postKey(e, false)
+    keyToCode.delete(e.key)
+    if (e.target !== document && e.target !== document.body) {
+      e.preventDefault()
+    }
+  })
+  vm.postIOData('keyboard', {
+    key: 'HTMLifier',
+    isDown: true
+  })
+
+  const question = document.getElementById('question')
+  const askBox = document.getElementById('answer')
+  vm.runtime.addListener('QUESTION', questionData => {
+    // null means the question was interrupted by stop script block
+    if (questionData === null) {
+      document.body.classList.remove('asking')
+    } else {
+      document.body.classList.add('asking')
+      question.textContent = questionData
+      askBox.value = ''
+      askBox.focus()
+    }
+  })
+  askBox.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      // The asking class must be removed first because the VM may start the
+      // next question immediately inside the .emit call
+      document.body.classList.remove('asking')
+      vm.runtime.emit('ANSWER', askBox.value)
+    }
+  })
+
+  const getVariable = (targetId, variableId) => {
+    const target = targetId
+      ? vm.runtime.getTargetById(targetId)
+      : vm.runtime.getTargetForStage()
+    return target.variables[variableId]
+  }
+  const monitorStates = {}
+  vm.runtime.addListener('MONITORS_UPDATE', monitors => {
+    monitors.forEach((record, id) => {
+      const {
+        value,
+        visible,
+        mode,
+        x,
+        y,
+        width,
+        height,
+        params,
+        opcode,
+        spriteName,
+        sliderMin,
+        sliderMax,
+        isDiscrete,
+        targetId
+      } = record
+
+      if (!monitorStates[id]) {
+        const label = document.createElement('span')
+        label.className = 'monitor-label'
+        const name = params.VARIABLE || params.LIST || opcode
+        label.textContent = spriteName ? `${spriteName}: ${name}` : name
+
+        const value = document.createElement('span')
+        value.className = 'monitor-value'
+
+        const monitor = document.createElement('div')
+        monitor.className = 'monitor ' + mode
+        monitor.style.left = x + 'px'
+        monitor.style.top = y + 'px'
+        monitor.append(label, value)
+
+        monitorStates[id] = { monitor, valueElem: value, wasVisible: true }
+
+        if (mode === 'slider') {
+          const slider = document.createElement('input')
+          slider.type = 'range'
+          slider.min = sliderMin
+          slider.max = sliderMax
+          slider.step = isDiscrete ? 1 : 0.01
+          // Prevent tab focus, per #54, but it deviates from Scratch
+          slider.tabIndex = -1
+          slider.addEventListener('input', () => {
+            getVariable(targetId, id).value = slider.value
+          })
+          slider.addEventListener('change', () => {
+            getVariable(targetId, id).value = slider.value
+          })
+          monitorStates[id].slider = slider
+          monitor.append(slider)
+        } else if (mode === 'list') {
+          // If the list has never been resized, the width/height will be 0.
+          // Weird!
+          monitor.style.width = (width || 100) + 'px'
+          monitor.style.height = (height || 200) + 'px'
+
+          monitorStates[id].rowElems = []
+        }
+
+        monitorWrapper.append(monitor)
+      }
+
+      const {
+        monitor,
+        valueElem,
+        wasVisible,
+        lastValue = [],
+        slider,
+        rowElems
+      } = monitorStates[id]
+      if (visible) {
+        if (!wasVisible) {
+          monitor.style.display = null
+        }
+        const differed = Array.isArray(value)
+          ? JSON.stringify(lastValue) !== JSON.stringify(value)
+          : lastValue !== value
+        if (differed) {
+          if (Array.isArray(value)) {
+            if (lastValue.length !== rowElems.length) {
+              console.error(
+                "List monitor rowElems and lastValue lengths don't match."
+              )
+            }
+
+            value.forEach((val, i) => {
+              if (i >= lastValue.length) {
+                // Could also set width to (lastValue.length + '').length + 'ch'
+                const index = document.createElement('div')
+                index.className = 'index'
+                index.textContent = i + 1
+
+                const value = document.createElement('div')
+                value.className = 'row-value'
+
+                const row = document.createElement('div')
+                row.className = 'row'
+                row.append(index, value)
+
+                valueElem.append(row)
+                rowElems[i] = value
+              }
+
+              if (lastValue[i] !== val) {
+                rowElems[i].textContent = val
+              }
+            })
+
+            if (value.length < lastValue.length) {
+              for (const toRemove of rowElems.splice(
+                value.length,
+                lastValue.length - value.length
+              )) {
+                toRemove.parentNode.remove()
+              }
+            }
+          } else {
+            // The HTMLifier used to use Number(value.toFixed(6)) but I don't
+            // think Scratch does that for monitors
+            valueElem.textContent = value
+            if (slider) {
+              slider.value = value
+            }
+          }
+        }
+      } else if (wasVisible) {
+        monitor.style.display = 'none'
+      }
+      monitorStates[id].wasVisible = visible
+      // `value` is a live array
+      monitorStates[id].lastValue = Array.isArray(value) ? [...value] : value
+    })
+  })
+
+  vm.postIOData('userData', { username: options.username })
+
+  for (let i = 0; i < options.extensionCount; i++) {
+    await vm.extensionManager.loadExtensionURL(String(i))
+  }
+
+  await vm.loadProject(
+    options.assets.file
+      ? await fetch(options.assets.file).then(r => r.arrayBuffer())
+      : typeof options.assets.project === 'string'
+      ? await storage.load(storage.AssetType.Project).then(asset => asset.data)
+      : // project.json was included as parsed JSON
+        JSON.stringify(options.assets.project)
+  )
+
+  const cloudProvider = new CloudProvider(options)
+  vm.setCloudProvider(cloudProvider)
+  if (options.cloud.specialBehaviours || !options.cloud.serverUrl) {
+    const stageVariables = vm.runtime.getTargetForStage().variables
+    for (const { name, isCloud } of Object.values(stageVariables)) {
+      if (isCloud) {
+        if (
+          options.cloud.specialBehaviours &&
+          options.cloud.serverUrl &&
+          !name.startsWith(CLOUD_PREFIX + 'local storage')
+        ) {
+          continue
+        }
+        const value = localStorage.getItem('[s3] ' + name)
+        if (value !== null) {
+          vm.postIOData('cloud', { varUpdate: { name, value } })
+        }
+      }
+    }
+  }
+  if (options.cloud.specialBehaviours) {
+    cloudProvider.handleUrlChange()
+  }
+
+  progress.remove()
+  const loadingImage = document.getElementById('loading-image')
+  if (loadingImage) {
+    loadingImage.remove()
+  }
+  document.body.classList.remove('loading')
+
+  const greenFlag = document.getElementById('start-btn')
+  const stopSign = document.getElementById('stop-btn')
+  greenFlag.addEventListener('click', () => {
+    greenFlag.blur()
+    vm.greenFlag()
+  })
+  stopSign.addEventListener('click', () => {
+    stopSign.blur()
+    vm.stopAll()
+  })
+  vm.on('PROJECT_RUN_START', () => {
+    document.body.classList.add('running')
+    stopSign.disabled = false
+  })
+  vm.on('PROJECT_RUN_STOP', () => {
+    document.body.classList.remove('running')
+    stopSign.disabled = true
+  })
+  if (options.autoStart) {
+    vm.greenFlag()
+  }
+
+  document
+    .getElementById('download-btn')
+    .addEventListener('click', async () => {
+      download(await vm.saveProjectSb3(), document.title + '.sb3')
+    })
+  const addSpriteInput = document.getElementById('add-sprite-file')
+  addSpriteInput.addEventListener('change', async () => {
+    addSpriteInput.disabled = true
+    for (const file of addSpriteInput.files) {
+      // 1. Convert the File to an arrayBuffer. I care less about browser
+      // support, so I can use async/await + .arrayBuffer
+      // https://github.com/LLK/scratch-gui/blob/develop/src/lib/file-uploader.js#L25
+      const sprite = new Uint8Array(await file.arrayBuffer())
+
+      // 2. Convert a costume to a sprite (skipping for now)
+      // https://github.com/LLK/scratch-gui/blob/develop/src/lib/file-uploader.js#L208
+
+      // 3. Add to VM
+      await vm.addSprite(sprite)
+    }
+    addSpriteInput.disabled = false
+    addSpriteInput.value = null
+  })
+
+  canvas.addEventListener('mousedown', handleMouseDown)
+  canvas.addEventListener('touchstart', handleMouseDown, { passive: false })
+}
+
+const errorsTextarea = document.getElementById('errors')
+function handleHashChange () {
+  // #show-errors-<Han sheep>
+  if (window.location.hash === '#show-errors-%E7%BE%8A') {
+    if (!window.onNewError) {
+      window.onNewError = () => {
+        errorsTextarea.value = `${
+          window.errors.length
+        } error(s)\n${window.errors.join('\n')}`
+      }
+      window.onNewError()
+    }
+    errorsTextarea.style.display = 'block'
+  } else if (window.onNewError) {
+    window.onNewError = null
+    errorsTextarea.style.display = 'none'
+  }
+}
+window.addEventListener('hashchange', handleHashChange)
+handleHashChange()
+
+// Not used by the template, but might be convenient for un-HTMLifying if I
+// remember this function exists
+window.download = (blob, name = 'download') => {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name
+  document.body.append(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+</script> <script>
+const GENERATED = 1710893279689
+const initOptions = {
+	"width": 480,
+	"height": 360,
+	"stretchStage": false,
+	"fps": 30,
+	"turbo": false,
+	"limits": true,
+	"fencing": true,
+	"pointerLock": false,
+	"autoStart": true,
+	"username": "ScratchCat",
+	"loadingProgress": true,
+	"cloud": {
+		"serverUrl": null,
+		"specialBehaviours": false,
+		"projectId": "0"
+	},
+	"extensionWorker": {
+		"url": "https://sheeptester.github.io/scratch-vm/16-9/extension-worker.js"
+	},
+	"extensionCount": 0,
+	"assets": {
+		"project": "./project.json",
+		"2bd4830cb20ad7d2e8485000459081d9.svg": "./2bd4830cb20ad7d2e8485000459081d9.svg",
+		"83a9787d4cb6f3b7632b4ddfebf74367.wav": "./83a9787d4cb6f3b7632b4ddfebf74367.wav",
+		"e8d138c3ead269aadaf5c03e16757b02.svg": "./e8d138c3ead269aadaf5c03e16757b02.svg",
+		"6fa30a13fc2a1339f362abf827507a3b.wav": "./6fa30a13fc2a1339f362abf827507a3b.wav",
+		"9cef9930d57343e71c6c049cbcbe2c4a.svg": "./9cef9930d57343e71c6c049cbcbe2c4a.svg",
+		"c2a408ff6a02eef6ea6bfbd058e10314.svg": "./c2a408ff6a02eef6ea6bfbd058e10314.svg",
+		"e3c5c6859d63a88e94dde940a515281f.svg": "./e3c5c6859d63a88e94dde940a515281f.svg",
+		"d7cc9660b9bc0485c798aa87b7244a22.wav": "./d7cc9660b9bc0485c798aa87b7244a22.wav",
+		"d53a4be0106d3cb1c5669582abf227df.svg": "./d53a4be0106d3cb1c5669582abf227df.svg",
+		"3e05b15bc05004e7dc7619e2b582fb7a.svg": "./3e05b15bc05004e7dc7619e2b582fb7a.svg",
+		"b4086ab926818068ce440aa82a1afa9d.svg": "./b4086ab926818068ce440aa82a1afa9d.svg",
+		"2081a0f7bbfa119c0acfe7576027ae31.svg": "./2081a0f7bbfa119c0acfe7576027ae31.svg",
+		"78c6996fa5fb855715f22f9d4eeeb117.svg": "./78c6996fa5fb855715f22f9d4eeeb117.svg",
+		"acf5892b24f5fe5c4f3605f3b585a990.svg": "./acf5892b24f5fe5c4f3605f3b585a990.svg",
+		"c2a9726204c4a3831f64ec3e84c0b261.wav": "./c2a9726204c4a3831f64ec3e84c0b261.wav",
+		"e8290ddf19f38335f09baf3abc32e4a9.svg": "./e8290ddf19f38335f09baf3abc32e4a9.svg",
+		"2e43848292cbac5542e779bf71726bcf.wav": "./2e43848292cbac5542e779bf71726bcf.wav",
+		"02f9e7e6eb08df88275aba2b9f047696.svg": "./02f9e7e6eb08df88275aba2b9f047696.svg",
+		"a13877b8695b04e70eb7c5c9b8595529.wav": "./a13877b8695b04e70eb7c5c9b8595529.wav",
+		"afefcc5c5e4da38efad1ceabd8561d45.svg": "./afefcc5c5e4da38efad1ceabd8561d45.svg",
+		"609e21e5cf93f1c66ec69bd403a0fc3b.wav": "./609e21e5cf93f1c66ec69bd403a0fc3b.wav",
+		"072f1beb89ebc7503934108ef22e989d.svg": "./072f1beb89ebc7503934108ef22e989d.svg",
+		"bd2858cb42203dc2f7973769a6807d1d.wav": "./bd2858cb42203dc2f7973769a6807d1d.wav",
+		"1323a4fc1985a932f8f38d37402d454d.svg": "./1323a4fc1985a932f8f38d37402d454d.svg",
+		"b36dd0fbb82f18de11d606d6355268fa.wav": "./b36dd0fbb82f18de11d606d6355268fa.wav",
+		"2f81c715fa8ecc562e66b8be27dd987d.svg": "./2f81c715fa8ecc562e66b8be27dd987d.svg",
+		"b5336c0ddcf8362bf7cf4e84bcdbc675.wav": "./b5336c0ddcf8362bf7cf4e84bcdbc675.wav",
+		"5faf3cd615eab8f3260bec48e61cd2ca.svg": "./5faf3cd615eab8f3260bec48e61cd2ca.svg",
+		"8500aba1f921bef117320bbf29c51a50.wav": "./8500aba1f921bef117320bbf29c51a50.wav",
+		"18f7197631225d6cc02b781b7fb36ff3.svg": "./18f7197631225d6cc02b781b7fb36ff3.svg",
+		"b505c807f2f9aa38b1a84bc0075c3d8e.wav": "./b505c807f2f9aa38b1a84bc0075c3d8e.wav",
+		"7eee21d26bc63a4be4b8fe650b0e1fcb.svg": "./7eee21d26bc63a4be4b8fe650b0e1fcb.svg",
+		"59b50e7d5d83cf5c7127ac98eb7c6c3f.wav": "./59b50e7d5d83cf5c7127ac98eb7c6c3f.wav",
+		"88a3904f318e288f925c89ede0cf013e.svg": "./88a3904f318e288f925c89ede0cf013e.svg",
+		"b3760805d2e3cb43be192d7a5b5b33d4.wav": "./b3760805d2e3cb43be192d7a5b5b33d4.wav",
+		"92829302fb153b6e8d86f5cd2ad17f07.svg": "./92829302fb153b6e8d86f5cd2ad17f07.svg",
+		"10cbb705c32f3ba7ba94085d76e773c6.wav": "./10cbb705c32f3ba7ba94085d76e773c6.wav",
+		"1bd0cfa2445996274b1ee124117bc2ff.svg": "./1bd0cfa2445996274b1ee124117bc2ff.svg",
+		"81484235152489a914cf1acf0933ad8a.wav": "./81484235152489a914cf1acf0933ad8a.wav",
+		"99ba38b33693f924d6fbeeb4531e2a0c.svg": "./99ba38b33693f924d6fbeeb4531e2a0c.svg",
+		"c707d6379c34791bd4d549daf168a047.wav": "./c707d6379c34791bd4d549daf168a047.wav",
+		"7606d5d26edf3b091dd183f58fe3f50c.svg": "./7606d5d26edf3b091dd183f58fe3f50c.svg",
+		"27704542647aa130e2c86324b31e78f8.wav": "./27704542647aa130e2c86324b31e78f8.wav",
+		"c11349819bc3c533dbb7008d2266053a.svg": "./c11349819bc3c533dbb7008d2266053a.svg",
+		"fbaebca876406797d7dcb58347c1adb1.wav": "./fbaebca876406797d7dcb58347c1adb1.wav",
+		"f72035e1984eda6ffdabcbc5a0e22305.svg": "./f72035e1984eda6ffdabcbc5a0e22305.svg",
+		"c1e3a3fb3bf1aab90ebdc3b2aa318686.wav": "./c1e3a3fb3bf1aab90ebdc3b2aa318686.wav",
+		"f043fe46a3d76ba6d55e9e2f993c6df4.svg": "./f043fe46a3d76ba6d55e9e2f993c6df4.svg",
+		"5d8631293345f29d2300a4ca1d2a0cf0.wav": "./5d8631293345f29d2300a4ca1d2a0cf0.wav",
+		"3c82845d13b4eee1e5aad9847abc7a90.svg": "./3c82845d13b4eee1e5aad9847abc7a90.svg",
+		"eab28d693d669a9ca51d6405038e2aa3.wav": "./eab28d693d669a9ca51d6405038e2aa3.wav",
+		"18595660a87c0ef51f522c8508075f60.svg": "./18595660a87c0ef51f522c8508075f60.svg",
+		"ab674bc6a412c9112851011bcf291bc0.wav": "./ab674bc6a412c9112851011bcf291bc0.wav",
+		"ab4eaf02ae3940ce4e6d9fd268b62585.svg": "./ab4eaf02ae3940ce4e6d9fd268b62585.svg",
+		"1478a4ffc1ab598e22667d5ccf689183.mp3": "./1478a4ffc1ab598e22667d5ccf689183.mp3",
+		"af2c066170f4adff1d11e04da1a90df3.svg": "./af2c066170f4adff1d11e04da1a90df3.svg",
+		"ede6915252e76cd6db8bda638b4c8bc5.wav": "./ede6915252e76cd6db8bda638b4c8bc5.wav",
+		"f79fda9e7f87aeab1ba1b95688122d99.svg": "./f79fda9e7f87aeab1ba1b95688122d99.svg",
+		"e2cbfa150ec2f0d368825046fb9ffd4e.wav": "./e2cbfa150ec2f0d368825046fb9ffd4e.wav",
+		"88246c6cd7dec0c2fc0f6be297bdb6d4.svg": "./88246c6cd7dec0c2fc0f6be297bdb6d4.svg",
+		"67d3b30497f396069003cb8ce68df1cf.wav": "./67d3b30497f396069003cb8ce68df1cf.wav",
+		"27999833138ba89634e4932f1490fccd.svg": "./27999833138ba89634e4932f1490fccd.svg",
+		"a31b5944448d29a68ba9725aa1ea02f0.wav": "./a31b5944448d29a68ba9725aa1ea02f0.wav",
+		"c0a0ac8b33c5d227e09ca56a659015b8.svg": "./c0a0ac8b33c5d227e09ca56a659015b8.svg",
+		"f5da47175b2aeed68cd6a275c59437e6.wav": "./f5da47175b2aeed68cd6a275c59437e6.wav",
+		"dddfa1b79f81e10f9043bcc93a44381c.svg": "./dddfa1b79f81e10f9043bcc93a44381c.svg",
+		"3eec1a6b96706e90f8fdc9f50612eb56.wav": "./3eec1a6b96706e90f8fdc9f50612eb56.wav",
+		"b9741a872651fe9e74189c3102937c35.svg": "./b9741a872651fe9e74189c3102937c35.svg",
+		"d3f6d2d733fba24cc0aa8f67f44835e0.wav": "./d3f6d2d733fba24cc0aa8f67f44835e0.wav",
+		"5e05c7839054743bb3f13798b7e7ceb5.svg": "./5e05c7839054743bb3f13798b7e7ceb5.svg",
+		"acc15bb77f342ca8ae56f1ac8da6fc90.wav": "./acc15bb77f342ca8ae56f1ac8da6fc90.wav",
+		"9a17e9ea12a7846b036377b0d2eaf090.svg": "./9a17e9ea12a7846b036377b0d2eaf090.svg",
+		"6a57c812e5e87708a28c61f8c7587a50.wav": "./6a57c812e5e87708a28c61f8c7587a50.wav",
+		"8a9dc24d46ff5e3de5525fad7587e741.svg": "./8a9dc24d46ff5e3de5525fad7587e741.svg",
+		"c2791f42de5a3d3d8ec568ad956ad799.wav": "./c2791f42de5a3d3d8ec568ad956ad799.wav",
+		"9a54f5bb3dd8dea7ece0981f4f2d35cc.wav": "./9a54f5bb3dd8dea7ece0981f4f2d35cc.wav",
+		"32184d0c8b6f411d43cdd9ec9ce406de.svg": "./32184d0c8b6f411d43cdd9ec9ce406de.svg",
+		"d259740232a59843e26c31dd5352f101.wav": "./d259740232a59843e26c31dd5352f101.wav",
+		"548687967bdf700683473b64a5dbf0ee.svg": "./548687967bdf700683473b64a5dbf0ee.svg",
+		"2e06755264fb31724e2e329c35aa7c1c.wav": "./2e06755264fb31724e2e329c35aa7c1c.wav",
+		"ceca3632c5bcf6d973b427b5740becef.svg": "./ceca3632c5bcf6d973b427b5740becef.svg",
+		"effd9fc6c7f3ba174921ae2acfd50a46.wav": "./effd9fc6c7f3ba174921ae2acfd50a46.wav",
+		"b6ee253ed759780d4d2906c9704f4e66.svg": "./b6ee253ed759780d4d2906c9704f4e66.svg",
+		"2adb9e576b086cb27ae19bac45f0b653.wav": "./2adb9e576b086cb27ae19bac45f0b653.wav",
+		"21a6cdb116c8357947052902961b6317.svg": "./21a6cdb116c8357947052902961b6317.svg",
+		"8a43ab8f1ae4a9507a2be1d09ff442c9.mp3": "./8a43ab8f1ae4a9507a2be1d09ff442c9.mp3",
+		"ccbd30cc46a17ecd092b3ce3b2a3c05d.svg": "./ccbd30cc46a17ecd092b3ce3b2a3c05d.svg",
+		"da7abad827d5c076e9255a736619afd8.wav": "./da7abad827d5c076e9255a736619afd8.wav",
+		"e550dfc02f519dc54eb52190b21d7351.svg": "./e550dfc02f519dc54eb52190b21d7351.svg",
+		"8bab3e28b889a9e4d6c4812a2a60eb41.wav": "./8bab3e28b889a9e4d6c4812a2a60eb41.wav",
+		"c5d29151b108eb709ce203c8fc701ce2.svg": "./c5d29151b108eb709ce203c8fc701ce2.svg",
+		"7c34dad6a3ef9ae321e5d30d3970cc78.wav": "./7c34dad6a3ef9ae321e5d30d3970cc78.wav",
+		"3428b400292468948fa93fdfe9e1a25d.svg": "./3428b400292468948fa93fdfe9e1a25d.svg",
+		"350e1e75d9af046bf128cd21e9550362.wav": "./350e1e75d9af046bf128cd21e9550362.wav",
+		"4b8a5a08717765293ef7f43c2c964ba9.svg": "./4b8a5a08717765293ef7f43c2c964ba9.svg",
+		"0ef096a3fb790964a1283fe350400543.wav": "./0ef096a3fb790964a1283fe350400543.wav",
+		"ceeee917f316da4689a4386172b02353.svg": "./ceeee917f316da4689a4386172b02353.svg",
+		"e4c46f13a9a56737e30068518f76e775.mp3": "./e4c46f13a9a56737e30068518f76e775.mp3",
+		"1e83baacf8cbb910c39a85fa0d9e6087.svg": "./1e83baacf8cbb910c39a85fa0d9e6087.svg",
+		"3318c6599397942d2014532a44b266fa.mp3": "./3318c6599397942d2014532a44b266fa.mp3",
+		"b74b547781346c6ff3fb66a2c122df46.svg": "./b74b547781346c6ff3fb66a2c122df46.svg",
+		"db2f018a0dc88b7f08ab0b2cc5b09ffd.wav": "./db2f018a0dc88b7f08ab0b2cc5b09ffd.wav",
+		"28e7b2b61112d18e91dafbd068fa08d4.svg": "./28e7b2b61112d18e91dafbd068fa08d4.svg",
+		"465b0ac91af31f2043a5792b9bca5f0e.svg": "./465b0ac91af31f2043a5792b9bca5f0e.svg",
+		"d099cd598d6acd55fecb5f2ff1682124.wav": "./d099cd598d6acd55fecb5f2ff1682124.wav",
+		"0667e42efecba65f74e08bdb3ea41a8b.svg": "./0667e42efecba65f74e08bdb3ea41a8b.svg",
+		"f2dea7409ce52f4b36c12db8853fa73f.wav": "./f2dea7409ce52f4b36c12db8853fa73f.wav",
+		"a208b68c7ecaa1ae3c750901fb7cf365.svg": "./a208b68c7ecaa1ae3c750901fb7cf365.svg",
+		"bb752b96bd3737fc21711b60bdfe6dd6.mp3": "./bb752b96bd3737fc21711b60bdfe6dd6.mp3",
+		"c1d3d00f8a2d9f9e8c4684b4e5f5581f.svg": "./c1d3d00f8a2d9f9e8c4684b4e5f5581f.svg",
+		"9c27b2b9472927b74cf2accb4ae5ecb4.wav": "./9c27b2b9472927b74cf2accb4ae5ecb4.wav",
+		"77f61d44aa93f7fa6b8daef06b8f45fd.svg": "./77f61d44aa93f7fa6b8daef06b8f45fd.svg",
+		"4c3d0ab58f4f47329066f0eb3fad8312.wav": "./4c3d0ab58f4f47329066f0eb3fad8312.wav",
+		"defd2894a6f49e12c01c8a3a573c1389.svg": "./defd2894a6f49e12c01c8a3a573c1389.svg",
+		"fd76a4ac4a3ca59c2a53d9cd9937c98d.wav": "./fd76a4ac4a3ca59c2a53d9cd9937c98d.wav",
+		"ab35df2fe52c8ac8574d8ef625721d69.svg": "./ab35df2fe52c8ac8574d8ef625721d69.svg",
+		"dfef8a872680d3fa47a641da634b2aa2.wav": "./dfef8a872680d3fa47a641da634b2aa2.wav",
+		"ea67a86063724e0620ea1fb8225026c6.svg": "./ea67a86063724e0620ea1fb8225026c6.svg",
+		"7487cee619c59a877978746ea24bdd2e.wav": "./7487cee619c59a877978746ea24bdd2e.wav",
+		"ad45d96e405bab1d435e815d4107f08a.svg": "./ad45d96e405bab1d435e815d4107f08a.svg",
+		"3eee5ce0ed92df3d6fcbae0031df09d1.mp3": "./3eee5ce0ed92df3d6fcbae0031df09d1.mp3",
+		"83109c71f0d36eac3969b0a59571e79f.svg": "./83109c71f0d36eac3969b0a59571e79f.svg",
+		"57f15d9a225fccf00e2825f06ab1ceb6.wav": "./57f15d9a225fccf00e2825f06ab1ceb6.wav",
+		"09f4f5403fc85a33693ec3e010062836.svg": "./09f4f5403fc85a33693ec3e010062836.svg",
+		"26ab745a55c8a137a9f8d82d1e39f405.mp3": "./26ab745a55c8a137a9f8d82d1e39f405.mp3",
+		"c550bf3030a2ee7d25dfb959c7b6c6fe.svg": "./c550bf3030a2ee7d25dfb959c7b6c6fe.svg",
+		"97ad1ce3db565b5cd829565bd7f48b58.wav": "./97ad1ce3db565b5cd829565bd7f48b58.wav",
+		"b705717a698bff176dda4a6cb39b2341.svg": "./b705717a698bff176dda4a6cb39b2341.svg",
+		"23b0d8212df4d6850ab9ba09934bc300.wav": "./23b0d8212df4d6850ab9ba09934bc300.wav",
+		"64068a99168128bb50dc7062b7566c8c.svg": "./64068a99168128bb50dc7062b7566c8c.svg",
+		"63a95d8a8735ef258318e130dc323a07.wav": "./63a95d8a8735ef258318e130dc323a07.wav",
+		"42e8f032c49484da61b0318049f6bf62.svg": "./42e8f032c49484da61b0318049f6bf62.svg",
+		"91d8068c9cb3dbaac7996ffc9ee052fe.wav": "./91d8068c9cb3dbaac7996ffc9ee052fe.wav",
+		"46e4425dbb454d8a144587b46b6c4178.svg": "./46e4425dbb454d8a144587b46b6c4178.svg",
+		"bf11ef003830b517d94e3a8c4049e91c.wav": "./bf11ef003830b517d94e3a8c4049e91c.wav",
+		"4a92fb9d360d4f4e34cc3467e8b6c6c2.svg": "./4a92fb9d360d4f4e34cc3467e8b6c6c2.svg",
+		"4058005691aff222aa2e624eca427aa4.wav": "./4058005691aff222aa2e624eca427aa4.wav",
+		"69791c81aa6324d23b50ad8b97f2a70e.svg": "./69791c81aa6324d23b50ad8b97f2a70e.svg",
+		"a500f6cd8f5cf0c3d782fd29e6b01938.mp3": "./a500f6cd8f5cf0c3d782fd29e6b01938.mp3",
+		"ed3f58a3ac4998707a414ea9bd530a95.svg": "./ed3f58a3ac4998707a414ea9bd530a95.svg",
+		"1d3a1f8d9c0969b105782fb8103f965f.wav": "./1d3a1f8d9c0969b105782fb8103f965f.wav",
+		"9cd4b95349547a95265538cc477c9504.svg": "./9cd4b95349547a95265538cc477c9504.svg",
+		"46773f806d0a46d3d4863a08d1c3e13f.wav": "./46773f806d0a46d3d4863a08d1c3e13f.wav",
+		"4f51da65804e1e2dd2a7c9ec96cf01fb.svg": "./4f51da65804e1e2dd2a7c9ec96cf01fb.svg",
+		"75ea70ea7551d4e4a30adbd838017184.mp3": "./75ea70ea7551d4e4a30adbd838017184.mp3",
+		"ba7a996446b64ad2fc527dcf7711d39d.svg": "./ba7a996446b64ad2fc527dcf7711d39d.svg",
+		"61560ad259d1b59383d9496793ef1940.wav": "./61560ad259d1b59383d9496793ef1940.wav",
+		"0bacc50b86fa4be350155c07a4d8e5a4.svg": "./0bacc50b86fa4be350155c07a4d8e5a4.svg",
+		"12fecb1b5dfff6cd9c727d382252dc10.wav": "./12fecb1b5dfff6cd9c727d382252dc10.wav",
+		"57543d1d55fc602d1477ad98d625cfcb.svg": "./57543d1d55fc602d1477ad98d625cfcb.svg",
+		"bfb8f2860559d920f72dfa1a570d7217.wav": "./bfb8f2860559d920f72dfa1a570d7217.wav",
+		"783a37b07f7d2857bca286ffc53dbab9.svg": "./783a37b07f7d2857bca286ffc53dbab9.svg",
+		"78c520415715515f75e59e0b000db878.wav": "./78c520415715515f75e59e0b000db878.wav",
+		"f693882845a5152ac33ef5a792a6a7ac.svg": "./f693882845a5152ac33ef5a792a6a7ac.svg",
+		"1d8609958b624ad129faa460861aa8e3.wav": "./1d8609958b624ad129faa460861aa8e3.wav",
+		"4ae881a8738bec010ae763e4762468b1.svg": "./4ae881a8738bec010ae763e4762468b1.svg",
+		"1f90d237d8d0e1b24849815b7eba4455.wav": "./1f90d237d8d0e1b24849815b7eba4455.wav",
+		"4f4e299d1ccefb9d5f8ab2e15565c677.svg": "./4f4e299d1ccefb9d5f8ab2e15565c677.svg",
+		"86db9d2fc1bb56dc1e85c9d0b9784856.wav": "./86db9d2fc1bb56dc1e85c9d0b9784856.wav",
+		"3249d8ca7decb2007aa2066be656c360.svg": "./3249d8ca7decb2007aa2066be656c360.svg",
+		"935ba8006890ebda9b273cd02ebe8aad.wav": "./935ba8006890ebda9b273cd02ebe8aad.wav",
+		"09c77683c8df47be5fd2ac3457d23f43.svg": "./09c77683c8df47be5fd2ac3457d23f43.svg",
+		"b76e8fec9077d0829ece6ad51aed0bf5.wav": "./b76e8fec9077d0829ece6ad51aed0bf5.wav",
+		"503c28b92606a0482d918775f13b8184.svg": "./503c28b92606a0482d918775f13b8184.svg",
+		"03fd15ae1aac4ae725767e8b9271c1ac.wav": "./03fd15ae1aac4ae725767e8b9271c1ac.wav",
+		"b82163b98e5f732de3e47c4a0c9d1c75.svg": "./b82163b98e5f732de3e47c4a0c9d1c75.svg",
+		"4d27d1cfb73165f8b85e79d7c55ab569.wav": "./4d27d1cfb73165f8b85e79d7c55ab569.wav",
+		"f82053b10a73394d2792fc9381435427.svg": "./f82053b10a73394d2792fc9381435427.svg",
+		"b9c9f0a5b2f9062c7464de44574b00c2.mp3": "./b9c9f0a5b2f9062c7464de44574b00c2.mp3",
+		"ba79ed93400f60be5338b3409bbce1a2.svg": "./ba79ed93400f60be5338b3409bbce1a2.svg",
+		"6615e299206ead3db7c802337bad2502.wav": "./6615e299206ead3db7c802337bad2502.wav",
+		"768b4afbc69fce792428ccdc4617b74c.svg": "./768b4afbc69fce792428ccdc4617b74c.svg",
+		"0268363e0089bc08722aa438fcf5cd29.wav": "./0268363e0089bc08722aa438fcf5cd29.wav",
+		"2c3e4d96f459df7e804adb482fe51459.svg": "./2c3e4d96f459df7e804adb482fe51459.svg",
+		"7df8c54e45472e3ca095db3d5518869b.mp3": "./7df8c54e45472e3ca095db3d5518869b.mp3",
+		"0b0cd64f46228043497bde364556775b.svg": "./0b0cd64f46228043497bde364556775b.svg",
+		"7b66373da6da41c8e80c04ad2f170dee.mp3": "./7b66373da6da41c8e80c04ad2f170dee.mp3",
+		"c92f207c3f844bd4569f4330001faa67.svg": "./c92f207c3f844bd4569f4330001faa67.svg",
+		"43c4ce5c7d6fe7a2a34e173753eeea15.wav": "./43c4ce5c7d6fe7a2a34e173753eeea15.wav",
+		"fda244931a3b23493a485a597a06ebf9.svg": "./fda244931a3b23493a485a597a06ebf9.svg",
+		"875058a9f93ae226ad1cfcb13ba59bfe.svg": "./875058a9f93ae226ad1cfcb13ba59bfe.svg",
+		"1b878554e922e4978be3a031bbadfd18.wav": "./1b878554e922e4978be3a031bbadfd18.wav"
+	}
+}
+init(initOptions)
+</script>
+  </body>
+</html>
